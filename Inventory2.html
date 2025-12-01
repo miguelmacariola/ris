@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[PROTOTYPE] Office Inventory Manager</title>
+    <style>
+        :root {
+            --primary: #2563eb; /* Back to Blue 600 */
+            --primary-hover: #1d4ed8; /* Back to Blue 700 */
+            --bg: #111827; /* Dark Slate 900 for background */
+            --surface: #ffffff; /* White for cards */
+            --text: #1f2937; /* Dark text for cards */
+            --text-light: #f3f4f6; /* Light text for dark bg */
+            --border: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning-bg: #fef9c3;
+            --warning-text: #a16207;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-light); /* Default text is light for dark bg */
+            margin: 0;
+            padding: 20px 5px; /* Added padding for mobile */
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--surface);
+            color: var(--text); /* Text inside container is dark */
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: #f9fafb;
+            overflow-x: auto; /* For mobile */
+            white-space: nowrap; /* For mobile */
+        }
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            flex-shrink: 0; /* For mobile */
+        }
+        .tab:hover { background: #f3f4f6; }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: white;
+        }
+
+        /* Content */
+        .content { padding: 30px; display: none; flex: 1; }
+        .content.active { display: block; }
+
+        /* NEW Section Box for boundaries */
+        .section-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .section-box h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .section-box h5 {
+            margin-top: 0;
+        }
+
+        /* Controls & Grid (used inside section-box) */
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .control-grid-full {
+             display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .input-wrapper { flex: 1; min-width: 200px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #64748b; }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box; /* Fixes padding issues */
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        button:hover { background: var(--primary-hover); }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        button.secondary { background: white; border: 1px solid var(--border); color: var(--text); }
+        button.secondary:hover { background: #f9fafb; }
+        button.success { background: var(--success); }
+        button.danger-ghost { background: #fef2f2; border: 1px solid #fee2e2; color: var(--danger); }
+
+        /* File input styled as a button */
+        .file-upload-label {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-block; /* Fix for label */
+        }
+        .file-upload-label:hover { background: #f9fafb; }
+        .file-name-span {
+            margin-left: 10px; 
+            color: #6b7280; 
+            font-size: 0.9rem;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+            transition: all 0.3s ease-in-out;
+            display: block; /* For mobile responsiveness */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover { background: #f9fafb; }
+        tr.disabled-row { opacity: 0.5; background: #f9fafb; }
+        tr.error-row { background: #fee2e2; }
+
+        /* Utilities */
+        .badge {
+            background: #dbeafe; /* Updated to Blue 100 */
+            color: #1e40af; /* Updated to Blue 800 */
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge.danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #9ca3af;
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1f2937;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+        @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* New Issuance List Style */
+        .item-selection-list {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .item-selection-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .item-selection-item:last-child { border-bottom: none; }
+        
+        /* New Toggle Header Style */
+        .toggle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-top: 20px;
+        }
+        .toggle-header h3 {
+            margin: 0;
+            flex: 1; /* Allow h3 to take up space */
+        }
+        .toggle-icon {
+            font-size: 1rem; /* Make icon a bit bigger */
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin-left: 10px;
+            user-select: none; /* Prevent text selection */
+        }
+        .toggle-icon.closed {
+            transform: rotate(-90deg);
+        }
+
+        /* New Help Tip / Tooltip CSS */
+        .help-tip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            top: 2px;
+        }
+        .help-icon {
+            font-size: 11px;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border: 1px solid #d1d5db;
+            color: #9ca3af;
+            border-radius: 50%;
+            text-align: center;
+            cursor: help;
+            display: inline-block;
+            font-weight: bold;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px; /* Half of width */
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            font-weight: normal;
+            line-height: 1.4;
+        }
+        .help-tip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+            body {
+                padding: 5px 0;
+            }
+            .container {
+                border-radius: 0;
+            }
+            .content {
+                padding: 15px;
+            }
+            .header {
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            .tab {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+            .toggle-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            .toggle-header .help-tip {
+                margin-left: 0;
+            }
+            .tooltip-text {
+                width: 180px;
+                margin-left: -90px;
+            }
+            .section-box {
+                padding: 15px;
+            }
+            .control-grid {
+                grid-template-columns: 1fr; /* Stack grid items on mobile */
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>[PROTOTYPE] 📦 Office Inventory Manager</h1>
+        <span id="status-bar" style="font-size: 0.9rem; opacity: 0.9;">Ready</span>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('inventory')">Inventory Master List</div>
+        <div class="tab" onclick="switchTab('plan')">Yearly Plan <span id="plan-badge" class="badge" style="display:none">0</span></div>
+        <div class="tab" onclick="switchTab('issuance')">Issuance & Stock <span id="issued-badge" class="badge" style="display:none">0</span></div>
+        <div class="tab" onclick="switchTab('ris-setup')">RIS Form Setup</div>
+    </div>
+
+    <!-- TAB 1: INVENTORY -->
+    <div id="inventory" class="content active">
+        <!-- Section for controls -->
+        <div class="section-box">
+            <h4>Manage Inventory</h4>
+            <div class="control-grid-full">
+                <!-- Import Section -->
+                <div class="input-wrapper">
+                    <label>📥 Import CSV
+                        <span class="help-tip">
+                            <span class="help-icon">?</span>
+                            <span class="tooltip-text" style="width: 250px; margin-left: -125px;">Upload a CSV file with 'Item' and 'Unit' headers. New items will be added, duplicates will be ignored.</span>
+                        </span>
+                    </label>
+                    <input type="file" id="csvInput" accept=".csv" style="display: none;" onchange="updateFileName('csvInput', 'fileName')">
+                    <label for="csvInput" class="file-upload-label">Browse File...</label>
+                    <span id="fileName" class="file-name-span">No file selected</span>
+                </div>
+                <button id="importBtn" onclick="handleFileUpload('csvInput', parseInventoryCSV)">Import Items</button>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid var(--border); width: 100%; margin: 20px 0;">
+
+            <!-- Add Manual Item Section -->
+            <div class="control-grid-full">
+                <div class="input-wrapper" style="flex: 2;">
+                    <label>Item Name
+                        <span class="help-tip">
+                            <span class="help-icon">?</span>
+                            <span class="tooltip-text">Manually add a single item to the master inventory list.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="newItemName" placeholder="e.g., Sign Pen, Black">
+                </div>
+                <div class="input-wrapper">
+                    <label>Unit</label>
+                    <select id="newItemUnit">
+                        <option value="Piece">Piece</option>
+                        <option value="Box">Box</option>
+                        <option value="Pack">Pack</option>
+                        <option value="Ream">Ream</option>
+                        <option value="Roll">Roll</option>
+                        <option value="Bottle">Bottle</option>
+                        <option value="Gallon">Gallon</option>
+                        <option value="Can">Can</option>
+                        <option value="Set">Set</option>
+                        <option value="Unit">Unit</option>
+                        <option value="Kilo">Kilo</option>
+                        <option value="Bar">Bar</option>
+                        <option value="Jar">Jar</option>
+                        <option value="Tube">Tube</option>
+                        <option value="Pair">Pair</option>
+                        <option value="Bundle">Bundle</option>
+                        <option value="Pad">Pad</option>
+                        <option value="Book">Book</option>
+                        <option value="Cassette">Cassette</option>
+                    </select>
+                </div>
+                <button onclick="addManualItem()">+ Add Item</button>
+            </div>
+        </div>
+
+        <!-- Search & Actions -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <input type="text" id="searchInv" placeholder="🔍 Search items..." onkeyup="renderInventory()" style="width: 300px; max-width: 100%;">
+            <button class="success" onclick="addToPlan()">Add Selected to Plan ➔
+                <span class="help-tip" style="top: 0px; margin-left: 3px;">
+                    <span class="help-icon" style="color: white; border-color: white;">?</span>
+                    <span class="tooltip-text">Select items using the checkboxes below, then click this to add them to your 'Yearly Plan'.</span>
+                </span>
+            </button>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="table-wrapper">
+            <table id="invTable">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th>Item Name</th>
+                        <th>Unit</th>
+                    </tr>
+                </thead>
+                <tbody id="invBody">
+                    <tr><td colspan="3" class="empty-state">Inventory is empty. Import a CSV or add items manually.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: PLANNING -->
+    <div id="plan" class="content">
+        <!-- New Upload Plan Section -->
+        <div class="section-box">
+            <h4>Manage Plan
+                <span class="help-tip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltip-text">This is your procurement plan for the year. Set the total quantity you expect to need for each item.</span>
+                </span>
+            </h4>
+            <div class="control-grid-full">
+                <div class="input-wrapper">
+                    <label>📤 Import Plan
+                        <span class="help-tip">
+                            <span class="help-icon">?</span>
+                            <span class="tooltip-text" style="width: 250px; margin-left: -125px;">Upload a CSV with 'Item' and 'Quantity' headers. It will find matching items in your master inventory and set their planned quantity.</span>
+                        </span>
+                    </label>
+                    <input type="file" id="planInput" accept=".csv" style="display: none;" onchange="updateFileName('planInput', 'planFileName')">
+                    <label for="planInput" class="file-upload-label">Browse File...</label>
+                    <span id="planFileName" class="file-name-span">No file selected</span>
+                </div>
+                <button id="importPlanBtn" onclick="handleFileUpload('planInput', parsePlanCSV)">Import Plan</button>
+            </div>
+        </div>
+        
+        <!-- Download Plan Button -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+            <button onclick="exportCSV()">📥 Download Plan as CSV</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="planTable">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Unit</th>
+                        <th style="width: 150px;">Quantity
+                            <span class="help-tip">
+                                <span class="help-icon">?</span>
+                                <span class="tooltip-text">This is the TOTAL number of items you plan to stock for the year. You cannot issue more than this number.</span>
+                            </span>
+                        </th>
+                        <th style="width: 60px;">Action
+                            <span class="help-tip">
+                                <span class="help-icon">?</span>
+                                <span class="tooltip-text">You can only remove an item if it has NOT been issued in the 'Issuance & Stock' tab.</span>
+                            </span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="planBody">
+                    <tr><td colspan="4" class="empty-state">No items in plan yet. Go to Inventory to select items.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: ISSUANCE -->
+    <div id="issuance" class="content">
+        <!-- Issue Item Section -->
+        <div class="section-box" style="border-left: 4px solid var(--success);">
+            <h4>Issue Items
+                <span class="help-tip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltip-text">Dispense items from your yearly plan and track stock levels.</span>
+                </span>
+            </h4>
+            
+            <!-- Issuance Cart -->
+            <h5>Issuance Cart
+                <span class="help-tip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltip-text">Add items here to issue them all at once as a single 'batch' or transaction.</span>
+                </span>
+            </h5>
+            <div class="table-wrapper" style="max-height: 200px;">
+                <table id="issueCartTable">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th style="width: 120px;">Qty to Issue</th>
+                            <th style="width: 100px;">Remaining</th>
+                            <th style="width: 60px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="issueCartBody">
+                        <tr><td colspan="4" class="empty-state">Cart is empty.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <button class="success" id="issueAllBtn" onclick="issueAllItems()" style="margin-top: 10px;">Issue All Items in Cart</button>
+            <hr style="border: none; border-top: 1px solid var(--border); width: 100%; margin: 20px 0;">
+
+            <!-- Item Selection -->
+            <h5>Add Items to Cart</h5>
+            <input type="text" id="issueSearchInput" placeholder="🔍 Search items from your plan..." onkeyup="renderIssueSearchList()">
+            
+            <div class="item-selection-list" id="issueSelectionList" style="margin-top: 10px;">
+                <!-- Items will be populated by JS -->
+                <div class="empty-state">No items available to issue.</div>
+            </div>
+        </div>
+
+        <!-- Stock Summary Table -->
+        <div class="toggle-header" onclick="toggleSection('stockBodyWrapper', 'stockToggleIcon')">
+            <h3>Stock Summary
+                <span class="help-tip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltip-text" style="width: 250px; margin-left: -125px;">This table shows a live summary of your stock levels. (Total Planned) - (Total Issued) = (Remaining).</span>
+                </span>
+            </h3>
+            <span class="toggle-icon" id="stockToggleIcon">▼</span>
+        </div>
+        <div class="table-wrapper" id="stockBodyWrapper" style="max-height: 250px; display: block;">
+            <table id="stockTable">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Unit</th>
+                        <th>Total Planned</th>
+                        <th>Total Issued</th>
+                        <th>Remaining</th>
+                    </tr>
+                </thead>
+                <tbody id="stockBody">
+                    <tr><td colspan="5" class="empty-state">No items in your yearly plan.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Issuance Log Table -->
+        <div class="toggle-header" onclick="toggleSection('logBodyWrapper', 'logToggleIcon')">
+            <h3>Issuance History
+                <span class="help-tip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltip-text">This log shows all past issuance batches. You can export or remove individual batches here.</span>
+                </span>
+            </h3>
+            <!-- Removed the global export button -->
+            <span class="toggle-icon" id="logToggleIcon">▼</span>
+        </div>
+        <div class="table-wrapper" id="logBodyWrapper" style="display: block;">
+            <table id="logTable">
+                <thead>
+                    <tr>
+                        <th>Date / Time</th>
+                        <th>Items Issued (Summary)</th>
+                        <th style="width: 140px;">Action</th> <!-- Adjusted width -->
+                    </tr>
+                </thead>
+                <tbody id="logBody">
+                    <tr><td colspan="3" class="empty-state">No items have been issued yet.</td></tr> <!-- Adjusted colspan -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 4: RIS FORM SETUP -->
+    <div id="ris-setup" class="content">
+        <div class="section-box">
+            <h4>RIS Form Details
+                <span class="help-tip">
+                    <span class="help-icon">?</span>
+                    <span class="tooltip-text" style="width: 250px; margin-left: -125px;">Enter your default RIS information here. It will be automatically saved in your browser and used in all your exported PDF and CSV files.</span>
+                </span>
+            </h4>
+
+            <div class="control-grid">
+                <div class="input-wrapper">
+                    <label>Entity Name</label>
+                    <input type="text" id="ris_entityName" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Bureau / Strand</label>
+                    <input type="text" id="ris_bureau" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Office</label>
+                    <input type="text" id="ris_office" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Fund Cluster</label>
+                    <input type="text" id="ris_fundCluster" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Responsibility Center Code</label>
+                    <input type="text" id="ris_respCenterCode" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Default RIS No.</label>
+                    <input type="text" id="ris_risNo" onchange="saveRISDetails()">
+                </div>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid var(--border); width: 100%; margin: 20px 0;">
+            
+            <h5>Signatories</h5>
+            <div class="control-grid">
+                 <div class="input-wrapper">
+                    <label>Requested by: (Name)</label>
+                    <input type="text" id="ris_requestedByName" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Requested by: (Designation)</label>
+                    <input type="text" id="ris_requestedByDesignation" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Approved by: (Name)</label>
+                    <input type="text" id="ris_approvedByName" onchange="saveRISDetails()">
+                </div>
+                <div class="input-wrapper">
+                    <label>Approved by: (Designation)</label>
+                    <input type="text" id="ris_approvedByDesignation" onchange="saveRISDetails()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="notification" class="notification">Action Successful</div>
+
+<script>
+    // --- STATE ---
+    let inventory = []; // Array of objects {id, item, unit}
+    let plan = {};      // Object key=id, value={qty}
+    let issuance_log = []; // Array of { batch_id, date_iso, items: [ { item_id, qty_issued }, ... ] }
+    let issuance_cart = {}; // Object key=id, value={ qty_to_issue }
+    let ris_details = {}; // Object to hold all RIS form data
+
+    // --- INITIALIZATION ---
+    /**
+     * Updates the file name span when a file is selected.
+     */
+    function updateFileName(inputId, spanId) {
+        const fileInput = document.getElementById(inputId);
+        const fileNameSpan = document.getElementById(spanId);
+        fileNameSpan.textContent = fileInput.files[0] ? fileInput.files[0].name : 'No file selected';
+    }
+
+
+    // --- CSV HANDLING ---
+    /**
+     * Generic file upload handler.
+     * @param {string} inputId - The ID of the file input element.
+     * @param {function} parserFunction - The specific parser function to call with the file content.
+     */
+    function handleFileUpload(inputId, parserFunction) {
+        const fileInput = document.getElementById(inputId);
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("Please select a file first.");
+            return;
+        }
+
+        // Find the button within the same grid/box
+        const importBtn = fileInput.closest('.control-grid-full, .section-box').querySelector('button');
+        const originalBtnText = importBtn.textContent;
+        importBtn.disabled = true;
+        importBtn.textContent = 'Importing...';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            parserFunction(text); // Call the specific parser
+            
+            // Reset UI
+            fileInput.value = ''; 
+            // Use the inputId to find the associated span
+            const spanId = document.querySelector(`label[for='${inputId}']`).nextElementSibling.id;
+            if (spanId) {
+                updateFileName(inputId, spanId);
+            } else {
+                // Fallback for planInput
+                updateFileName('planInput', 'planFileName');
+            }
+            
+            importBtn.disabled = false;
+            importBtn.textContent = originalBtnText;
+        };
+        reader.onerror = function() {
+            alert("Error reading file.");
+            importBtn.disabled = false;
+            importBtn.textContent = originalBtnText;
+        }
+        reader.readAsText(file);
+    }
+
+    /**
+     * Robust CSV parser that handles quoted fields.
+     * @param {string} text - The raw CSV text.
+     * @returns {object} An object { header: string[], rows: Array<string[]> }
+     */
+    function parseCSV(text) {
+        const lines = text.split(/\r\n|\n/);
+        const output = { header: [], rows: [] };
+        
+        let headerFound = false;
+        
+        for (const line of lines) {
+            if (!line.trim()) continue; // Skip empty lines
+
+            const fields = parseCSVLine(line);
+
+            if (!headerFound) {
+                // This is the header row
+                output.header = fields.map(h => h.toLowerCase().trim());
+                headerFound = true; 
+            } else {
+                // This is a data row
+                output.rows.push(fields);
+            }
+        }
+        return output;
+    }
+
+    /**
+     * Parses a single CSV line, handling commas inside quotes.
+     */
+    function parseCSVLine(line) {
+        const fields = [];
+        let currentField = '';
+        let inQuote = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+
+            if (char === '"') {
+                if (inQuote && line[i + 1] === '"') {
+                    // Handle escaped quote ("")
+                    currentField += '"';
+                    i++; // Skip next quote
+                } else {
+                    inQuote = !inQuote;
+                }
+            } else if (char === ',' && !inQuote) {
+                fields.push(currentField.trim());
+                currentField = '';
+            } else {
+                currentField += char;
+            }
+        }
+        fields.push(currentField.trim()); // Add the last field
+        return fields;
+    }
+
+    /**
+     * Specific parser for the INVENTORY CSV.
+     * Finds "item" and "unit" columns.
+     */
+    function parseInventoryCSV(text) {
+        let newCount = 0;
+        let dupCount = 0;
+        const data = parseCSV(text); // Use the robust parser
+
+        // Find column indices
+        const itemIndex = data.header.indexOf('item');
+        const unitIndex = data.header.indexOf('unit');
+
+        if (itemIndex === -1 || unitIndex === -1) {
+            alert("Import failed. CSV must contain 'Item' and 'Unit' headers.");
+            return;
+        }
+
+        for (const fields of data.rows) {
+            if (fields.length > Math.max(itemIndex, unitIndex)) {
+                const item = fields[itemIndex].replace(/^"|"$/g, '').trim(); 
+                const unit = fields[unitIndex].replace(/^"|"$/g, '').trim();
+                
+                if (item) {
+                    const added = addInvItem(item, cleanUnit(unit));
+                    if (added) newCount++;
+                    else dupCount++;
+                }
+            }
+        }
+        renderInventory();
+        showNotify(`Import complete: ${newCount} new items added. ${dupCount} duplicates ignored.`);
+    }
+
+    /**
+     * Specific parser for the PLAN CSV.
+     * Finds "item" and "quantity" columns.
+     */
+    function parsePlanCSV(text) {
+        let updatedCount = 0;
+        let ignoredCount = 0;
+        const data = parseCSV(text);
+
+        // Find column indices
+        const itemIndex = data.header.indexOf('item');
+        const qtyIndex = data.header.indexOf('quantity');
+
+        if (itemIndex === -1 || qtyIndex === -1) {
+            alert("Import failed. CSV must contain 'Item' and 'Quantity' headers.");
+            return;
+        }
+
+        for (const fields of data.rows) {
+            if (fields.length > Math.max(itemIndex, qtyIndex)) {
+                const itemName = fields[itemIndex].replace(/^"|"$/g, '').trim().toLowerCase();
+                const quantity = parseInt(fields[qtyIndex]) || 0; // BUG FIX: Use || 0, not || 1
+
+                // Find this item in the master inventory
+                const invItem = inventory.find(i => i.item.toLowerCase() === itemName);
+
+                if (invItem) {
+                    // Found it. Add or update it in the plan.
+                    plan[invItem.id] = { qty: quantity };
+                    updatedCount++;
+                } else {
+                    // This item isn't in the master list, so we ignore it.
+                    ignoredCount++;
+                }
+            }
+        }
+
+        // Re-render everything that depends on the plan
+        renderPlan();
+        renderInventory(); // To show disabled checkboxes
+        renderIssuanceTab();
+        updateBadge();
+
+        showNotify(`Plan imported: ${updatedCount} items updated. ${ignoredCount} items ignored (not in master list).`);
+    }
+
+
+    /**
+     * Cleans and standardizes unit names.
+     */
+    function cleanUnit(u) {
+        if (!u) return 'Piece';
+        const s = u.toLowerCase().trim();
+        
+        const map = {
+            // Piece
+            'pcs': 'Piece', 'pc': 'Piece', 'piece': 'Piece', 'pieces': 'Piece',
+            // Box
+            'box': 'Box', 'boxes': 'Box',
+            // Pack
+            'pack': 'Pack', 'packs': 'Pack', 'pack ': 'Pack', 'pack/roll': 'Pack',
+            // Bottle
+            'bottle': 'Bottle', 'bottles': 'Bottle',
+            // Gallon
+            'gal': 'Gallon', 'gallon': 'Gallon',
+            // Ream
+            'rm': 'Ream', 'ream': 'Ream',
+            // Unit
+            'unit': 'Unit', 'units': 'Unit',
+            // Set
+            'set': 'Set', 'sets': 'Set',
+            // Kilo
+            'kilo': 'Kilo', 'kg': 'Kilo',
+            // Can
+            'can': 'Can', 'cans': 'Can',
+            // Bar
+            'bar': 'Bar',
+            // Pouch
+            'pouch': 'Pouch', 'pouch ': 'Pouch',
+            // Roll
+            'roll': 'Roll',
+            // Jar
+            'jar': 'Jar',
+            // Tube
+            'tube': 'Tube',
+            // Pair
+            'pair': 'Pair',
+            // Bundle
+            'bundle': 'Bundle',
+            // Pad
+            'pad': 'Pad',
+            // Book
+            'book': 'Book',
+            // Cassette
+            'cassette': 'Cassette',
+            // Other
+            'per foot': 'Foot'
+        };
+        
+        return map[s] || (s.charAt(0).toUpperCase() + s.slice(1));
+    }
+
+
+    // --- INVENTORY LOGIC ---
+    /**
+     * Adds an item to inventory, returns true if added, false if duplicate.
+     */
+    function addInvItem(item, unit) {
+        // Prevent duplicates based on Item Name
+        if (!inventory.find(i => i.item.toLowerCase() === item.toLowerCase())) {
+            inventory.push({
+                id: Date.now() + Math.random().toString(16).slice(2),
+                item: item,
+                unit: unit
+            });
+            return true;
+        }
+        return false;
+    }
+
+    function addManualItem() {
+        const name = document.getElementById('newItemName').value;
+        const unit = document.getElementById('newItemUnit').value;
+        if (!name) {
+            alert("Please enter an item name.");
+            return;
+        }
+        
+        const added = addInvItem(name, unit);
+        if (added) {
+            renderInventory();
+            document.getElementById('newItemName').value = '';
+            showNotify("Item added!");
+        } else {
+            alert("This item already exists in the inventory.");
+        }
+    }
+
+    function renderInventory() {
+        const tbody = document.getElementById('invBody');
+        const search = document.getElementById('searchInv').value.toLowerCase();
+        tbody.innerHTML = '';
+
+        // Sort for consistency
+        inventory.sort((a, b) => a.item.localeCompare(b.item));
+
+        const filtered = inventory.filter(i => i.item.toLowerCase().includes(search));
+
+        if (filtered.length === 0) {
+            const state = inventory.length === 0 ? "Inventory is empty. Import a CSV or add items manually." : "No items found for your search.";
+            tbody.innerHTML = `<tr><td colspan="3" class="empty-state">${state}</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(i => {
+            const tr = document.createElement('tr');
+            const isInPlan = !!plan[i.id];
+            const isChecked = isInPlan ? 'checked disabled' : '';
+            
+            if (isInPlan) {
+                tr.classList.add('disabled-row');
+            }
+            
+            tr.innerHTML = `
+                <td><input type="checkbox" class="inv-checkbox" value="${i.id}" ${isChecked}></td>
+                <td>${i.item}</td>
+                <td><span class="badge">${i.unit}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        // Update status
+        document.getElementById('status-bar').innerText = `Total Inventory: ${inventory.length} items`;
+    }
+
+    function toggleAll(source) {
+        document.querySelectorAll('.inv-checkbox:not(:disabled)').forEach(cb => cb.checked = source.checked);
+    }
+
+    // --- PLANNING LOGIC ---
+    function addToPlan() {
+        const checkboxes = document.querySelectorAll('.inv-checkbox:checked:not(:disabled)');
+        if (checkboxes.length === 0) {
+            alert("Please select items to add.");
+            return;
+        }
+
+        let count = 0;
+        checkboxes.forEach(cb => {
+            const id = cb.value;
+            if (!plan[id]) {
+                plan[id] = { qty: 1 }; // Default quantity
+                count++;
+            }
+        });
+
+        // Reset UI
+        document.querySelectorAll('.inv-checkbox').forEach(cb => cb.checked = false);
+        renderInventory(); // Re-render to disable checkboxes
+        renderPlan();
+        updateBadge();
+        switchTab('plan');
+        showNotify(`Added ${count} items to plan!`);
+    }
+
+    function removeFromPlan(id) {
+        // Check if item has been issued
+        if (getIssuedCount(id) > 0) {
+            alert("CANNOT REMOVE ITEM: This item has already been issued.\n\nTo remove it, you must first go to the 'Issuance & Stock' tab and remove all entries for this item from the 'Issuance History'.");
+            return;
+        }
+
+        delete plan[id];
+        renderPlan();
+        renderInventory(); // Re-enable checkboxes
+        updateBadge();
+        renderIssuanceTab(); // Update issuance tab as well
+    }
+
+    function updateQty(id, val) {
+        if (plan[id]) {
+            const qty = parseInt(val);
+            const already_issued = getIssuedCount(id);
+
+            if (qty < already_issued) {
+                alert(`CANNOT SET QUANTITY: The new quantity (${qty}) is less than the amount already issued (${already_issued}).\n\nPlease set a value of ${already_issued} or higher.`);
+                plan[id].qty = already_issued; // Set to minimum possible
+                renderPlan(); // Re-render to fix the value in the input
+            } else {
+                plan[id].qty = qty >= 1 ? qty : 1; // Ensure quantity is at least 1
+            }
+            
+            // Re-render to show corrected value if needed
+            if (qty < 1) renderPlan(); 
+            
+            renderIssuanceTab(); // Update stock summary
+        }
+    }
+
+    function renderPlan() {
+        const tbody = document.getElementById('planBody');
+        tbody.innerHTML = '';
+        
+        const planIds = Object.keys(plan);
+        
+        // Sort for consistency
+        const sortedPlanItems = planIds.map(id => inventory.find(i => i.id === id))
+                                       .filter(Boolean) // Remove any deleted items
+                                       .sort((a, b) => a.item.localeCompare(b.item));
+
+        if (sortedPlanItems.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Your plan is empty.</td></tr>`;
+            return;
+        }
+
+        sortedPlanItems.forEach(invItem => {
+            const id = invItem.id;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${invItem.item}</td>
+                <td><span class="badge">${invItem.unit}</span></td>
+                <td>
+                    <input type="number" value="${plan[id].qty}" min="1" 
+                           onchange="updateQty('${id}', this.value)"
+                           style="width: 80px;">
+                </td>
+                <td>
+                    <button class="danger-ghost" 
+                            onclick="removeFromPlan('${id}')">Remove</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateBadge() {
+        const count = Object.keys(plan).length;
+        const badge = document.getElementById('plan-badge');
+        badge.innerText = count;
+        badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+
+    // --- ISSUANCE LOGIC ---
+
+    /**
+     * Calculates the total quantity issued for a specific item_id
+     * by checking all batches in the log.
+     */
+    function getIssuedCount(item_id) {
+        let total = 0;
+        for (const batch of issuance_log) {
+            for (const item of batch.items) {
+                if (item.item_id === item_id) {
+                    total += item.qty_issued;
+                }
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Gets the remaining stock for a given item_id.
+     */
+    function getRemainingStock(item_id) {
+        if (!plan[item_id]) return 0;
+        const total_allowed = plan[item_id].qty;
+        const already_issued = getIssuedCount(item_id);
+        return total_allowed - already_issued;
+    }
+
+    /**
+     * Issues all valid items from the cart as a single batch.
+     */
+    function issueAllItems() {
+        const cartIds = Object.keys(issuance_cart);
+        if (cartIds.length === 0) {
+            alert("Your issuance cart is empty. Please add items to issue.");
+            return;
+        }
+
+        let errors = [];
+        let itemsToIssue = []; // This will become the 'items' array in the batch
+
+        // 1. VALIDATE THE ENTIRE CART FIRST
+        for (const id of cartIds) {
+            const item = inventory.find(i => i.id === id);
+            const qty_to_issue = issuance_cart[id].qty_to_issue;
+            const remaining = getRemainingStock(id);
+
+            if (!qty_to_issue || qty_to_issue <= 0) {
+                errors.push(`'${item.item}': Please enter a valid quantity greater than 0.`);
+                continue;
+            }
+
+            if (qty_to_issue > remaining) {
+                errors.push(`'${item.item}': You are trying to issue ${qty_to_issue}, but only ${remaining} are left.`);
+                continue;
+            }
+
+            // If valid, add to processing list
+            itemsToIssue.push({
+                item_id: id,
+                qty_issued: qty_to_issue
+            });
+        }
+
+        // 2. REPORT ERRORS OR PROCESS
+        if (errors.length > 0) {
+            alert("CANNOT ISSUE ITEMS:\n\n" + errors.join("\n") + "\n\nPlease correct the errors in your cart.");
+            renderIssueCart(); // Re-render cart to show error states
+            return;
+        }
+
+        // 3. PROCESS (NO ERRORS) - Create a single batch
+        const newBatch = {
+            batch_id: Date.now() + Math.random().toString(16).slice(2),
+            date_iso: new Date().toISOString(),
+            items: itemsToIssue // This array was built during validation
+        };
+        issuance_log.push(newBatch);
+        issuance_cart = {}; // Clear the cart
+
+        showNotify(`Successfully issued ${itemsToIssue.length} item(s) in one batch!`);
+        renderIssuanceTab(); // Update all tables and badges
+    }
+
+    /**
+     * Adds an item from the search list to the issuance cart.
+     */
+    function addToIssueCart(item_id) {
+        if (!issuance_cart[item_id]) {
+            issuance_cart[item_id] = { qty_to_issue: 1 }; // Default to 1
+            renderIssueSearchList();
+            renderIssueCart();
+        }
+    }
+
+    /**
+     * Removes an item from the issuance cart.
+     */
+    function removeFromIssueCart(item_id) {
+        delete issuance_cart[item_id];
+        renderIssueSearchList();
+        renderIssueCart();
+    }
+    
+    /**
+     * Updates the quantity for an item in the cart state.
+     */
+    function updateIssueCartQty(item_id, qty) {
+        if (issuance_cart[item_id]) {
+            issuance_cart[item_id].qty_to_issue = parseInt(qty) || 0;
+            renderIssueCart(); // Re-render to check for errors
+        }
+    }
+
+
+    /**
+     * Removes an entire batch from the main issuance log (history).
+     */
+    function removeBatch(batch_id) {
+        issuance_log = issuance_log.filter(batch => batch.batch_id !== batch_id);
+        renderIssuanceTab(); // Re-render everything
+    }
+
+    /**
+     * Renders all components in the Issuance tab.
+     */
+    function renderIssuanceTab() {
+        renderIssueSearchList();
+        renderIssueCart();
+        renderStockSummaryTable();
+        renderIssuanceLogTable();
+        updateIssuedBadge();
+    }
+
+    /**
+     * Renders the filterable list of plan items NOT in the cart.
+     */
+    function renderIssueSearchList() {
+        const listDiv = document.getElementById('issueSelectionList');
+        const search = document.getElementById('issueSearchInput').value.toLowerCase();
+        listDiv.innerHTML = '';
+
+        const planIds = Object.keys(plan);
+        let availableItems = 0;
+
+        // Get all items in the plan, sort by name
+        const planItems = planIds.map(id => inventory.find(i => i.id === id)).filter(Boolean);
+        planItems.sort((a,b) => a.item.localeCompare(b.item));
+
+        planItems.forEach(item => {
+            // Skip if in cart OR not in search
+            if (issuance_cart[item.id] || !item.item.toLowerCase().includes(search)) {
+                return;
+            }
+            
+            availableItems++;
+            const remaining = getRemainingStock(item.id);
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-selection-item';
+            
+            let label = `${item.item} <span class="badge" style="margin-left: 8px;">${remaining} left</span>`;
+            if (remaining <= 0) {
+                label = `${item.item} <span class="badge danger" style="margin-left: 8px;">Out of Stock</span>`;
+            }
+
+            itemDiv.innerHTML = `
+                <div>${label}</div>
+                <button class="secondary" onclick="addToIssueCart('${item.id}')" ${remaining <= 0 ? 'disabled' : ''}>+</button>
+            `;
+            listDiv.appendChild(itemDiv);
+        });
+
+        if (availableItems === 0) {
+            const state = planIds.length === 0 ? "Add items to your 'Yearly Plan' first." : "No items match your search, or all items are in the cart.";
+            listDiv.innerHTML = `<div class="empty-state">${state}</div>`;
+        }
+    }
+
+    /**
+     * Renders the Issuance Cart table.
+     */
+    function renderIssueCart() {
+        const tbody = document.getElementById('issueCartBody');
+        const cartIds = Object.keys(issuance_cart);
+        tbody.innerHTML = '';
+
+        if (cartIds.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Cart is empty.</td></tr>`;
+            document.getElementById('issueAllBtn').disabled = true;
+            return;
+        }
+        
+        document.getElementById('issueAllBtn').disabled = false;
+        let hasError = false;
+
+        cartIds.forEach(id => {
+            const item = inventory.find(i => i.id === id);
+            const qty_to_issue = issuance_cart[id].qty_to_issue;
+            const remaining = getRemainingStock(id);
+
+            const tr = document.createElement('tr');
+            
+            // Validation check
+            if (qty_to_issue > remaining || qty_to_issue <= 0) {
+                tr.classList.add('error-row');
+                hasError = true;
+            }
+
+            tr.innerHTML = `
+                <td>${item.item}</td>
+                <td>
+                    <input type="number" value="${qty_to_issue}" min="1" 
+                           onchange="updateIssueCartQty('${id}', this.value)"
+                           style="width: 80px;">
+                </td>
+                <td>${remaining}</td>
+                <td>
+                    <button class="danger-ghost" 
+                            onclick="removeFromIssueCart('${id}')">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        if (hasError) {
+             document.getElementById('issueAllBtn').disabled = true;
+             // Add a helpful error message row
+             tbody.innerHTML += `<tr><td colspan="4" style="text-align: center; background: var(--warning-bg); color: var(--warning-text); font-weight: 600;">
+                Please fix errors (red rows) before issuing.
+             </td></tr>`;
+        }
+    }
+
+
+    /**
+     * Renders the summary table of stock levels.
+     */
+    function renderStockSummaryTable() {
+        const tbody = document.getElementById('stockBody');
+        tbody.innerHTML = '';
+        const planIds = Object.keys(plan);
+
+        if (planIds.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No items in your yearly plan.</td></tr>`;
+            return;
+        }
+
+        const planItems = planIds.map(id => inventory.find(i => i.id === id)).filter(Boolean);
+        planItems.sort((a,b) => a.item.localeCompare(b.item));
+
+        planItems.forEach(item => {
+            const total_allowed = plan[item.id].qty;
+            const already_issued = getIssuedCount(item.id);
+            const remaining = total_allowed - already_issued;
+
+            const tr = document.createElement('tr');
+            if (remaining === 0) {
+                tr.style.color = "#9ca3af"; // Gray out if stock is empty
+            } else if (remaining < 0) {
+                tr.style.color = "var(--danger)"; // Should not happen
+            }
+
+            tr.innerHTML = `
+                <td>${item.item}</td>
+                <td><span class="badge">${item.unit}</span></td>
+                <td>${total_allowed}</td>
+                <td>${already_issued}</td>
+                <td style="font-weight: 600;">${remaining}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    /**
+     * Renders the detailed history of all issuance batches.
+     */
+    function renderIssuanceLogTable() {
+        const tbody = document.getElementById('logBody');
+        tbody.innerHTML = '';
+
+        if (issuance_log.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No items have been issued yet.</td></tr>`;
+            return;
+        }
+
+        // Sort by date, most recent first
+        issuance_log.sort((a, b) => new Date(b.date_iso) - new Date(a.date_iso));
+
+        issuance_log.forEach(batch => {
+            const formattedDate = new Date(batch.date_iso).toLocaleString();
+
+            // Create the summary string
+            const summary = batch.items.map(item => {
+                const itemData = inventory.find(i => i.id === item.item_id);
+                const itemName = itemData ? itemData.item : "Unknown";
+                // Truncate long item names for summary
+                const shortName = itemName.length > 30 ? itemName.substring(0, 30) + '...' : itemName;
+                return `${item.qty_issued} ${shortName}`;
+            }).join(', ');
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formattedDate}</td>
+                <td>${summary}</td>
+                <td style="display: flex; gap: 5px; flex-wrap: wrap;"> <!-- Added wrap for mobile -->
+                    <button class="secondary" style="padding: 5px 10px;"
+                            onclick="printBatch('${batch.batch_id}')">Print (PDF)</button>
+                    <button class="secondary" style="padding: 5px 10px;"
+                            onclick="exportBatch('${batch.batch_id}')">Export (CSV)</button>
+                    <button class="danger-ghost" style="padding: 5px 10px;"
+                            onclick="removeBatch('${batch.batch_id}')">Remove</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    /**
+     * Updates the badge on the Issuance tab to show batch count.
+     */
+    function updateIssuedBadge() {
+        const count = issuance_log.length; // Count of batches
+        const badge = document.getElementById('issued-badge');
+        badge.innerText = count;
+        badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+
+
+    // --- RIS FORM DATA ---
+    /**
+     * Saves the current values from the RIS setup form to localStorage.
+     */
+    function saveRISDetails() {
+        ris_details = {
+            entityName: document.getElementById('ris_entityName').value,
+            bureau: document.getElementById('ris_bureau').value,
+            office: document.getElementById('ris_office').value,
+            fundCluster: document.getElementById('ris_fundCluster').value,
+            respCenterCode: document.getElementById('ris_respCenterCode').value,
+            risNo: document.getElementById('ris_risNo').value,
+            requestedByName: document.getElementById('ris_requestedByName').value,
+            requestedByDesignation: document.getElementById('ris_requestedByDesignation').value,
+            approvedByName: document.getElementById('ris_approvedByName').value,
+            approvedByDesignation: document.getElementById('ris_approvedByDesignation').value,
+        };
+        localStorage.setItem('ris_details', JSON.stringify(ris_details));
+        showNotify("RIS details saved!");
+    }
+
+    /**
+     * Loads RIS details from localStorage into the state and populates the form fields.
+     */
+    function loadRISDetails() {
+        const saved = localStorage.getItem('ris_details');
+        if (saved) {
+            ris_details = JSON.parse(saved);
+
+            // Populate the form fields
+            document.getElementById('ris_entityName').value = ris_details.entityName || '';
+            document.getElementById('ris_bureau').value = ris_details.bureau || '';
+            document.getElementById('ris_office').value = ris_details.office || '';
+            document.getElementById('ris_fundCluster').value = ris_details.fundCluster || '';
+            document.getElementById('ris_respCenterCode').value = ris_details.respCenterCode || '';
+            document.getElementById('ris_risNo').value = ris_details.risNo || '';
+            document.getElementById('ris_requestedByName').value = ris_details.requestedByName || '';
+            document.getElementById('ris_requestedByDesignation').value = ris_details.requestedByDesignation || '';
+            document.getElementById('ris_approvedByName').value = ris_details.approvedByName || '';
+            document.getElementById('ris_approvedByDesignation').value = ris_details.approvedByDesignation || '';
+        }
+    }
+
+
+    // --- UTILS & EXPORT ---
+
+    /**
+     * Toggles a section's visibility and updates its icon.
+     */
+    function toggleSection(wrapperId, iconId) {
+        const wrapper = document.getElementById(wrapperId);
+        const icon = document.getElementById(iconId);
+        if (wrapper.style.display === 'none') {
+            wrapper.style.display = 'block';
+            icon.textContent = '▼';
+            icon.classList.remove('closed');
+        } else {
+            wrapper.style.display = 'none';
+            icon.textContent = '►';
+            icon.classList.add('closed');
+        }
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        
+        document.getElementById(tabName).classList.add('active');
+        // Find the tab button that was clicked
+        const tabs = document.querySelectorAll('.tab');
+        if (tabName === 'inventory') tabs[0].classList.add('active');
+        else if (tabName === 'plan') tabs[1].classList.add('active');
+        else if (tabName === 'issuance') {
+            tabs[2].classList.add('active');
+            renderIssuanceTab(); // Re-render this tab every time it's clicked
+        }
+        else if (tabName === 'ris-setup') tabs[3].classList.add('active');
+    }
+
+    function showNotify(msg) {
+        const n = document.getElementById('notification');
+        n.innerText = msg;
+        n.style.display = 'block';
+        setTimeout(() => n.style.display = 'none', 3000);
+    }
+
+    function exportCSV() {
+        const planIds = Object.keys(plan);
+        if (planIds.length === 0) {
+            alert("Plan is empty! Nothing to export.");
+            return;
+        }
+
+        let csvContent = '"Item","Unit","Quantity"\n';
+        
+        planIds.forEach(id => {
+            const invItem = inventory.find(i => i.id === id);
+            if (!invItem) return;
+            
+            const qty = plan[id].qty;
+            // Handle commas in item name by quoting
+            const cleanItem = invItem.item.includes(',') ? `"${invItem.item}"` : invItem.item;
+            csvContent += `${cleanItem},"${invItem.unit}",${qty}\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Yearly_Procurement_Plan.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    /**
+     * Generates a new, printable HTML page formatted as an RIS
+     * and triggers the print dialog (for Save as PDF).
+     */
+    function printBatch(batch_id) {
+        const batch = issuance_log.find(b => b.batch_id === batch_id);
+        if (!batch) {
+            alert("Error: Could not find batch to print.");
+            return;
+        }
+
+        const now = new Date(batch.date_iso);
+        const formattedDate = now.toLocaleDateString();
+
+        let itemRows = '';
+        batch.items.forEach(item => {
+            const itemData = inventory.find(i => i.id === item.item_id);
+            const itemName = itemData ? itemData.item : "Unknown Item";
+            const itemUnit = itemData ? itemData.unit : "N/A";
+
+            itemRows += `
+                <tr>
+                    <td></td>
+                    <td>${itemUnit}</td>
+                    <td>${itemName}</td>
+                    <td style="text-align: center;">${item.qty_issued}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            `;
+        });
+
+        // Fill empty rows for a standard form look (e.g., total 15 rows)
+        const emptyRowsNeeded = Math.max(0, 10 - batch.items.length);
+        for (let i = 0; i < emptyRowsNeeded; i++) {
+            itemRows += `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+        }
+
+        const risHTML = `
+            <html>
+            <head>
+                <title>Requisition and Issue Slip</title>
+                <style>
+                    @page {
+                        size: A4;
+                        margin: 0.75in;
+                    }
+                    
+                    /* ================================================================
+                       == FONT SIZE CONTROL: BODY (Main Font) ==
+                       
+                       This is the main font size for the entire document.
+                       Change "10pt" to your desired size (e.g., "11pt", "12px").
+                       ================================================================
+                    */
+                    body {
+                        font-family: Georgia, serif;
+                        font-size: 10pt; /* <-- ADJUST MAIN FONT SIZE HERE */
+                        margin: 0;
+                        padding: 0;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 10px;
+                    }
+                    th, td {
+                        border: 1px solid black;
+                        padding: 4px;
+                        vertical-align: top;
+                    }
+                    
+                    /* ================================================================
+                       == FONT SIZE CONTROL: HEADER SECTION ==
+                       
+                       This controls the font size for the "Entity Name", 
+                       "Fund Cluster", etc. at the top of the form.
+                       ================================================================
+                    */
+                    .header-table {
+                        font-size: 10pt; /* <-- ADJUST HEADER FONT SIZE HERE */
+                    }
+                    .header-table td {
+                        /* BORDERS ADDED as requested */
+                        border: 1px solid black; 
+                        padding: 1px 4px;
+                    }
+                    
+                    /* ================================================================
+                       == FONT SIZE CONTROL: MAIN ITEMS TABLE ==
+                       
+                       This controls the font size for the main items list
+                       (Description, Unit, Quantity, etc.).
+                       ================================================================
+                    */
+                    .main-table {
+                        font-size: 10pt; /* <-- ADJUST MAIN ITEMS TABLE FONT SIZE HERE */
+                    }
+                    .main-table th {
+                        font-weight: bold;
+                        text-align: center;
+                    }
+                    .main-table td {
+                        height: 20px;
+                    }
+                    
+                    /* ================================================================
+                       == FONT SIZE CONTROL: FOOTER SECTION ==
+                       
+                       This controls the font size for the "Requested by",
+                       "Approved by", etc. at the bottom of the form.
+                       ================================================================
+                    */
+                    .footer-table {
+                        font-size: 10pt; /* <-- ADJUST FOOTER FONT SIZE HERE */
+                    }
+                    .footer-table td {
+                        /* BORDERS ADDED as requested */
+                        border: 1px solid black; 
+                        padding: 8px 4px;
+                        height: 40px;
+                        vertical-align: bottom;
+                    }
+                    
+                    /* ================================================================
+                       == FONT SIZE CONTROL: SIGNATORIES (Specific) ==
+                       
+                       This controls the font size for ONLY the "Printed Name" and
+                       "Designation" fields to be extra small.
+                       Change "8pt" to your desired size.
+                       ================================================================
+                    */
+                    .signatory-details {
+                        font-size: 8pt; /* <-- ADJUST SIGNATORY FONT SIZE HERE */
+                    }
+                    
+                    .no-border {
+                        border: none !important;
+                    }
+                    .center { text-align: center; }
+                    .right { text-align: right; }
+                    .bold { font-weight: bold; }
+                    
+                    /* ================================================================
+                       == FONT SIZE CONTROL: TITLE ==
+                       
+                       This controls the font size for the main title
+                       ("REQUISITION AND ISSUE SLIP").
+                       Change "16pt" to your desired size.
+                       ================================================================
+                    */
+                    .title { 
+                        font-size: 16pt; /* <-- ADJUST TITLE FONT SIZE HERE */
+                        font-weight: bold; 
+                        text-align: center; 
+                        margin: 10px 0; 
+                    }
+                    .appendix { 
+                        text-align: right; 
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="appendix">Appendix 63</div>
+                <div class="title">REQUISITION AND ISSUE SLIP</div>
+                
+                <table class="header-table">
+                    <tr>
+                        <td width="15%">Entity Name:</td>
+                        <td width="35%">${ris_details.entityName || ''}</td>
+                        <td width="20%">Fund Cluster:</td>
+                        <td width="30%">${ris_details.fundCluster || ''}</td>
+                    </tr>
+                    <tr>
+                        <td>Bureau/Strand:</td>
+                        <td>${ris_details.bureau || ''}</td>
+                        <td>Responsibility Center Code:</td>
+                        <td>${ris_details.respCenterCode || ''}</td>
+                    </tr>
+                    <tr>
+                        <td>Office:</td>
+                        <td>${ris_details.office || ''}</td>
+                        <td>RIS No.:</td>
+                        <td>${ris_details.risNo || ''}</td>
+                    </tr>
+                </table>
+
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th colspan="4" class="center bold">Requisition</th>
+                            <th colspan="2" class="center bold">Stock Available?</th>
+                            <th colspan="2" class="center bold">Issue</th>
+                        </tr>
+                        <tr>
+                            <!-- Removed inline font-size: 9px; style -->
+                            <td colspan="4" class="center" style="">To be filled out by the Requesting Office</td>
+                            <!-- Removed inline font-size: 9px; style -->
+                            <td colspan="2" class="center" style="">To be filled out by AMD</td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr>
+                            <th width="10%">Stock No.</th>
+                            <th width="10%">Unit</th>
+                            <th width="35%">Description</th>
+                            <th width="8%">Quantity</th>
+                            <th width="5%">Yes</th>
+                            <th width="5%">No</th>
+                            <th width="8%">Quantity</th>
+                            <th width="19%">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemRows}
+                        
+                        <!-- 
+                           ================================================================
+                           == "NOTHING FOLLOWS" ROW ADDED AS REQUESTED ==
+                           
+                           This row is added directly after the last item.
+                           The empty row padding has been removed.
+                           ================================================================
+                        -->
+                        <tr>
+                            <td colspan="8" style="text-align: center; font-style: italic;">--- NOTHING FOLLOWS ---</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="main-table">
+                    <tr>
+                        <td style="border-right: none; padding-bottom: 20px;" width="10%"><span class="bold">Purpose:</span></td>
+                        <td style="border-left: none; padding-bottom: 20px;"></td>
+                    </tr>
+                </table>
+
+                <table class="footer-table">
+                    <!-- 
+                       ================================================================
+                       == FIXED COLUMN WIDTHS ==
+                       
+                       Widths are set here in the header row for the signatory columns
+                       as you requested.
+                       ================================================================
+                    -->
+                    <tr class="center bold">
+                        <td width="15%"></td>
+                        <td width="21.25%">Requested by:</td>
+                        <td width="21.25%">Approved by:</td>
+                        <td width="21.25%">Issued by:</td>
+                        <td width="21.25%">Received by:</td>
+                    </tr>
+                    <tr>
+                        <td class="bold">Signature:</td>
+                        <td></td> <!-- Removed border-bottom, will inherit from table cell -->
+                        <td></td> <!-- Removed border-bottom, will inherit from table cell -->
+                        <td></td> <!-- Removed border-bottom, will inherit from table cell -->
+                        <td></td> <!-- Removed border-bottom, will inherit from table cell -->
+                    </tr>
+                    <tr>
+                        <td class="bold">Printed Name:</td>
+                        <!-- Added signatory-details class to these cells -->
+                        <td class="center signatory-details">${ris_details.requestedByName || ''}</td>
+                        <td class="center signatory-details">${ris_details.approvedByName || ''}</td>
+                        <td class="center signatory-details"></td>
+                        <td class="center signatory-details"></td>
+                    </tr>
+                    <tr>
+                        <td class="bold">Designation:</td>
+                        <!-- Added signatory-details class to these cells -->
+                        <td class="center signatory-details">${ris_details.requestedByDesignation || ''}</td>
+                        <td class="center signatory-details">${ris_details.approvedByDesignation || ''}</td>
+                        <td class="center signatory-details"></td>
+                        <td class="center signatory-details"></td>
+                    </tr>
+                    <tr>
+                        <td class="bold">Date:</td>
+                        <td class="center">${formattedDate}</td>
+                        <td class="center"></td>
+                        <td class="center"></td>
+                        <td class="center"></td>
+                    </tr>
+                </table>
+
+                <script>
+                    window.onafterprint = window.close;
+                    window.print();
+                <\/script>
+            </body>
+            </html>
+        `;
+
+        // --- 3. Open and write to the new window ---
+        const printWindow = window.open('', '_blank');
+        printWindow.document.open();
+        printWindow.document.write(risHTML);
+        printWindow.document.close();
+    }
+
+
+    /**
+     * Exports a single issuance batch to a timestamped CSV file
+     * formatted exactly like the RIS (Requisition and Issue Slip) template.
+     */
+    function exportBatch(batch_id) {
+        const batch = issuance_log.find(b => b.batch_id === batch_id);
+        if (!batch) {
+            alert("Error: Could not find batch to export.");
+            return;
+        }
+
+        // --- 1. Build the RIS CSV String ---
+        let csvContent = `,,,,,,,\n`; // Start with blank line
+        csvContent += `,,,,,,,"Appendix 63"\n`;
+        csvContent += `,,,,,,,\n`;
+        csvContent += `REQUISITION AND ISSUE SLIP,,,,,,,\n`;
+        csvContent += `,,,,,,,\n`;
+        // Header Fields - Using placeholders
+        csvContent += `Entity Name :,,${ris_details.entityName || ''},,,,Fund Cluster : ,${ris_details.fundCluster || ''}\n`;
+        csvContent += `Bureau/    Strand :,,${ris_details.bureau || ''},,,,Responsibility Center Code : ,${ris_details.respCenterCode || ''}\n`;
+        csvContent += `Office : ,${ris_details.office || ''},,,,RIS No. : ,${ris_details.risNo || ''}\n`;
+        csvContent += `Requisition,,,,Stock Available?,,Issue,\n`;
+        csvContent += `To be filled out by the Requesting Office,,,,To be filled out by AMD,,,\n`;
+        
+        // Main Table Headers
+        csvContent += `"Stock No.","Unit","Description","Quantity","Yes","No","Quantity","Remarks"\n`;
+        
+        // Table Data Rows
+        batch.items.forEach(item => {
+            const itemData = inventory.find(i => i.id === item.item_id);
+            const itemName = itemData ? itemData.item : "Unknown Item";
+            const itemUnit = itemData ? itemData.unit : "N/A";
+
+            // Quote item name if it has a comma, and escape existing quotes
+            const cleanItem = `"${itemName.replace(/"/g, '""')}"`;
+            const cleanUnit = `"${itemUnit.replace(/"/g, '""')}"`;
+            
+            // Format: [Stock No.], [Unit], [Description], [Req. Qty], [Yes], [No], [Issue Qty], [Remarks]
+            csvContent += `,${cleanUnit},${cleanItem},${item.qty_issued},,,, \n`; // Added space for Remarks alignment
+        });
+
+        // ADD "NOTHING FOLLOWS" ROW as requested
+        csvContent += `,,--- NOTHING FOLLOWS ---,,,,,\n`;
+
+        // Footer Fields
+        csvContent += `,,,,,,,\n`; // spacer
+        csvContent += `   Purpose:, [Enter Purpose Here],,,,,,\n`; // Purpose is left blank for user to fill
+        csvContent += `,,,,,,,\n`; // spacer
+        csvContent += `,,,,,,,\n`; // spacer
+        csvContent += `Note: The requested items must be claimed not later than three (3) working days upon AMD's receipt of RIS.,,,,,,,\n`;
+        csvContent += `,,Requested by:   ,Approved by:,,Issued by:,,Received by:\n`;
+        csvContent += `Signature :,,,,,,,\n`;
+        csvContent += `Printed Name :,,"${ris_details.requestedByName || ''}","${ris_details.approvedByName || ''}",,, \n`;
+        csvContent += `Designation :,,"${ris_details.requestedByDesignation || ''}","${ris_details.approvedByDesignation || ''}",,, \n`;
+        csvContent += `Date :,,"${new Date(batch.date_iso).toLocaleDateString()}",,,,, \n`;
+
+        // --- 2. Generate Timestamp and Filename ---
+        const now = new Date(batch.date_iso);
+        const timestamp = now.getFullYear().toString() +
+                        (now.getMonth() + 1).toString().padStart(2, '0') +
+                        now.getDate().toString().padStart(2, '0') +
+                        '_' +
+                        now.getHours().toString().padStart(2, '0') +
+                        now.getMinutes().toString().padStart(2, '0');
+        
+        // Generate a filename based on the first item
+        const firstItemName = (inventory.find(i => i.id === batch.items[0].item_id)?.item || "RIS")
+                            .split(',')[0].replace(/[^a-z0-9]/gi, '_'); // Sanitize
+        const filename = `RIS_${firstItemName}_${timestamp}.csv`;
+
+        // --- 3. Create blob and download link ---
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+
+    // Initial render on load
+    loadRISDetails(); // Load saved RIS data
+    renderInventory();
+    renderPlan();
+    renderIssuanceTab(); // Initial render for the new tab
+</script>
+
+</body>
+</html>
